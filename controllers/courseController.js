@@ -24,6 +24,10 @@ module.exports.viewProfile= async function(req,res){
 
 //render add form
 module.exports.renderAddForm =  function(req, res){
+    if (!req.user.can('add course')){
+        res.redirect('/');
+        return
+    }
     const course =  {
         name: '',
         department: departments[0],
@@ -35,6 +39,10 @@ module.exports.renderAddForm =  function(req, res){
 
 //add
 module.exports.addCourse = async function(req, res){
+    if (!req.user.can('add course')){
+        res.redirect('/');
+        return
+    }
     const course = await Course.create({
         name: req.body.name,
         department: req.body.department,
