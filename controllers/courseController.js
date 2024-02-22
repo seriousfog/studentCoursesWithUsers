@@ -54,12 +54,20 @@ module.exports.addCourse = async function(req, res){
 
 //render edit form
 module.exports.renderEditForm = async function(req, res){
+    if (!req.user.can('edit course')){
+        res.redirect('/');
+        return
+    }
     const course = await Course.findByPk(req.params.id);
     res.render('course/edit', {course, departments});
 }
 
 //update
 module.exports.updateCourse = async function(req, res){
+    if (!req.user.can('edit course')){
+        res.redirect('/');
+        return
+    }
     const course = await Course.update({
         name: req.body.name,
         department: req.body.department,
@@ -75,6 +83,10 @@ module.exports.updateCourse = async function(req, res){
 
 //delete
 module.exports.deleteCourse = async function(req, res){
+    if (!req.user.can('delete course')){
+        res.redirect('/');
+        return
+    }
     await Course.destroy({
         where: {
             id:req.params.id
@@ -85,6 +97,14 @@ module.exports.deleteCourse = async function(req, res){
 
 //Add student to a course
 module.exports.enrollStudent = async function(req, res){
+    const isAdmin = req.user.can('enroll student');
+    const profileBelongsToUser = req.user.can('enroll self') && req.user.matchesStudentId(req.body.student);
+
+    //if they aren't staff and they aren't the student whose profile they are trying to view, redirect
+    if (!isAdmin && !profileBelongsToUser) {
+        res.redirect('/')
+        return
+    }
     await StudentCourses.create({
         student_id: req.body.student,
         course_id: req.params.courseId
@@ -94,6 +114,14 @@ module.exports.enrollStudent = async function(req, res){
 
 //remove a student from a course
 module.exports.removeStudent = async function(req, res){
+    const isAdmin = req.user.can('drop student');
+    const profileBelongsToUser = req.user.can('drop self') && req.user.matchesStudentId(req.params.studentId);
+
+    //if they aren't staff and they aren't the student whose profile they are trying to view, redirect
+    if (!isAdmin && !profileBelongsToUser) {
+        res.redirect('/')
+        return
+    }
     await StudentCourses.destroy({
         where: {
             course_id: req.params.courseId,
